@@ -3,6 +3,7 @@ using ActionGameFramework.Projectiles;
 using Model.Runtime.Projectiles;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UIElements;
 
 namespace UnitBrains.Player
@@ -49,14 +50,30 @@ namespace UnitBrains.Player
             ///////////////////////////////////////
             // Homework 1.4 (1st block, 4rd module)
             ///////////////////////////////////////
-            List<Vector2Int> result = GetReachableTargets();
-            while (result.Count > 1)
+            List<Vector2Int> result = GetReachableTargets();// получает список достижимых целей
+            float min = float.MaxValue;
+            Vector2Int nearest = Vector2Int.zero; 
+
+            if (result.Count > 0)
             {
-                result.RemoveAt(result.Count - 1);
+                return result;
             }
-            return result;
-            ///////////////////////////////////////
-        }
+                foreach (var target in result)
+                {
+                    if (min > DistanceToOwnBase(target))
+                {
+                    min = DistanceToOwnBase(target);
+                    nearest = target;
+                }
+                
+                }
+            
+
+                    result.Clear(); // убираем лишнее
+                    result.Add(nearest);//добавляет в итоге ближайшего
+                    return result; // возвращает последнюю цель
+
+                 }
 
         public override void Update(float deltaTime, float time)
         {
