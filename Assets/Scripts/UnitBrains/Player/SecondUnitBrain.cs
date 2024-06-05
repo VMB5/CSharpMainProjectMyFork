@@ -20,6 +20,7 @@ namespace UnitBrains.Player
         private float _cooldownTime = 0f;
         private bool _overheated;
         List<Vector2Int> Outreachable = new List<Vector2Int>();
+        public int MaxPlayer = 0;
 
         protected override void GenerateProjectiles(Vector2Int forTarget, List<BaseProjectile> intoList)
         {
@@ -64,7 +65,6 @@ namespace UnitBrains.Player
             ///////////////////////////////////////
             // Homework 1.4 (1st block, 4rd module)
             ///////////////////////////////////////
-            List<Vector2Int> reach = GetReachableTargets();// получает список достижимых целей
             List <Vector2Int> result = new List<Vector2Int>(); //финальный список
             Outreachable.Clear(); //очищаем список недостижимых целей
 
@@ -79,7 +79,6 @@ namespace UnitBrains.Player
                 {
                     min = DistanceToOwnBase(target);
                     nearest = target;
-                    result.Add(nearest);
                 }
             }
             
@@ -94,7 +93,7 @@ namespace UnitBrains.Player
                 }
 
             
-            if (result.Count == 0)
+            if (result.Count == 0 && Outreachable.Count == 0)
             {
                 result.Add(runtimeModel.RoMap.Bases[IsPlayerUnitBrain ? RuntimeModel.BotPlayerId : RuntimeModel.PlayerId]);
                 return result;
