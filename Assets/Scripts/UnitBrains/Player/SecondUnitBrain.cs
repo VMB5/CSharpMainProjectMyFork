@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using ActionGameFramework.Projectiles;
 using Model;
 using Model.Runtime.Projectiles;
@@ -56,9 +57,17 @@ namespace UnitBrains.Player
 
         public override Vector2Int GetNextStep()
         {
-       
-                return base.GetNextStep();
-            
+        return base.GetNextStep();
+        Vector2Int target = Outreachable[0];
+        if (Outreachable.Count > 0 && !IsTargetInRange(target))
+           {
+                return unit.Pos.CalcNextStepTowards(target);
+           }
+
+        else
+            {
+                return unit.Pos;
+            }
         }
 
         protected override List<Vector2Int> SelectTargets()
@@ -66,18 +75,30 @@ namespace UnitBrains.Player
             List<Vector2Int> targets = new List<Vector2Int>();
             List<Vector2Int> result = new List<Vector2Int>();
 
-
+            Outreachable.Clear();
 
             foreach (var target in GetAllTargets())
             {
-                targets.Add(target);
+                if (IsTargetInRange(target))
+                {
+                    targets.Add(target);
 
+                }
+                else
+                {
+                    Outreachable.Add(target);
+                }
             }
 
 
-            if (targets.Count == 0)
+            if (result.Count == 0 && Outreachable.Count == 0)
             {
-                result.Add(runtimeModel.RoMap.Bases[IsPlayerUnitBrain ? RuntimeModel.BotPlayerId : RuntimeModel.PlayerId]);
+                if (IsTargetInRange(runtimeModel.RoMap.Bases[IsPlayerUnitBrain ? RuntimeModel.BotPlayerId : RuntimeModel.PlayerId]))
+                {
+                    result.Add(runtimeModel.RoMap.Bases[IsPlayerUnitBrain ? RuntimeModel.BotPlayerId : RuntimeModel.PlayerId]);
+                    return result;
+                }
+                Outreachable.Add(runtimeModel.RoMap.Bases[IsPlayerUnitBrain ? RuntimeModel.BotPlayerId : RuntimeModel.PlayerId]);
                 return result;
             }
 
@@ -88,16 +109,15 @@ namespace UnitBrains.Player
             {
                 result.Add(targets[targetID]);
             }
-            else
+            else if (targets.Count > 0)
             {
-                // Но если индекс больше количества целей, берем последнюю цель
-                result.Add(targets[targets.Count - 1]);
+                result.Add(targets[targets.Count - 1]); // последний элемент, ВАЖНО индекс положительный
             }
 
             return result;
-        
 
-    }
+
+        }
 
         public override void Update(float deltaTime, float time)
         {
