@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using ActionGameFramework.Projectiles;
 using Model;
 using Model.Runtime.Projectiles;
 using Unity.VisualScripting;
@@ -20,10 +19,18 @@ namespace UnitBrains.Player
         private enum BehemothState { Moving, Shooting, Switching }
         private BehemothState _state = BehemothState.Moving;
         private BehemothState _nextState = BehemothState.Moving;
+        List<Vector2Int> Outreachable = new List<Vector2Int>();
 
         private const float SwitchDuration = 1f;
         private float _switchTimer = 0f;
+        private static int UnitCounter = 0;
+        public int Counter { get; private set; }
+        private const int MaxTargets = 3;
 
+        public ThirdUnitBrain()
+        {
+            Counter = UnitCounter++;
+        }
         public override void Update(float deltaTime, float time)
         {
             // 1) КАЖДЫЙ КАДР решаем, какой режим нужен СЕЙЧАС
@@ -54,10 +61,52 @@ namespace UnitBrains.Player
         // В режиме Moving/Switching — целей не отдаём (атака блокируется)
         protected override List<Vector2Int> SelectTargets()
         {
-            if (_state != BehemothState.Shooting)
-                return new List<Vector2Int>();
+            List<Vector2Int> targets = new List<Vector2Int>();
+            List<Vector2Int> result = new List<Vector2Int>();
 
-            return base.SelectTargets();
+            if (_state != BehemothState.Shooting)
+            
+                return result;
+
+                Outreachable.Clear();
+                foreach (var target in GetAllTargets())
+                {
+                    if (IsTargetInRange(target))
+                    {
+                        targets.Add(target);
+
+                    }
+                    else
+                    {
+                        Outreachable.Add(target);
+                    }
+                }
+
+
+                if (targets.Count == 0 && Outreachable.Count == 0)
+                {
+                    if (IsTargetInRange(runtimeModel.RoMap.Bases[IsPlayerUnitBrain ? RuntimeModel.BotPlayerId : RuntimeModel.PlayerId]))
+                    {
+                        result.Add(runtimeModel.RoMap.Bases[IsPlayerUnitBrain ? RuntimeModel.BotPlayerId : RuntimeModel.PlayerId]);
+                        return result;
+                    }
+                    Outreachable.Add(runtimeModel.RoMap.Bases[IsPlayerUnitBrain ? RuntimeModel.BotPlayerId : RuntimeModel.PlayerId]);
+                    return result;
+                }
+
+                SortByDistanceToOwnBase(targets);
+                int targetID = Counter % MaxTargets;
+                // Индекс таргета зависит от максимального кол-ва целей и айди нашего атакующего юнита 
+                if (targetID < targets.Count)
+                {
+                    result.Add(targets[targetID]);
+                }
+                else if (targets.Count > 0)
+                {
+                    result.Add(targets[targets.Count - 1]); // последний элемент, ВАЖНО индекс положительный
+                }
+
+            return result;
         }
 
         // Движемся только в Moving
@@ -76,7 +125,7 @@ namespace UnitBrains.Player
 
             var p = CreateProjectile(forTarget);
             AddProjectileToList(p, intoList);
-            // Debug.Log("[Behemoth] Fire!");
+            Debug.Log("[Behemoth] Fire!");
         }
 
         private void DecideDesiredState(bool hasTargetsInRange)
@@ -92,7 +141,7 @@ namespace UnitBrains.Player
             _state = BehemothState.Switching;
             _nextState = to;
             _switchTimer = 0f;
-            // Debug.Log($"[Behemoth] Switching → {_nextState}");
+            Debug.Log($"[Behemoth] Switching → {_nextState}");
         }
     }
 }
